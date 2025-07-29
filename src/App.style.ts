@@ -14,7 +14,7 @@ export const Layout = styled.div`
 
 export const Content = styled.div`
   flex: 1;
-  padding: 32px;
+  padding: 20px 10px 0px 10px;
   overflow-y: auto;
 
   @media (max-width: 768px) {
