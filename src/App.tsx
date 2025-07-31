@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./Pages/Home/Home";
 import Contracts from "./Pages/Contracts/Contracts";
 import { Layout, Content } from "./App.style";
+import Signature from "./Pages/Signature/Signature";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/contratos" element={<Contracts />} />
+            <Route path="/signature/:contractId" element={<Signature />} />
           </Routes>
         </Content>
       </Layout>
