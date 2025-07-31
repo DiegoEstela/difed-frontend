@@ -3,9 +3,12 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Box, Typography, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Container from "../../styles/Container";
+import { useState } from "react";
+import { UploadContractModal } from "../../components/Modal/UploadContractModal";
 
 const Contracts = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <Container>
@@ -45,8 +48,7 @@ const Contracts = () => {
         </Paper>
 
         <Paper
-          onClick={() => navigate("/cargar-contrato")}
-          elevation={3}
+          onClick={() => setIsModalOpen(true)}
           sx={{
             width: 200,
             height: 180,
@@ -71,6 +73,12 @@ const Contracts = () => {
           </Typography>
         </Paper>
       </Box>
+
+      {/* MODAL */}
+      <UploadContractModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </Container>
   );
 };
