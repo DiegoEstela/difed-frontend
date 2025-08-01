@@ -6,7 +6,6 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { signPdfAndUpload } from "../../utils/signPdfAndUpload";
-
 import {
   Container,
   PdfWrapper,
@@ -26,6 +25,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
+import { PDFDocument } from "pdf-lib";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -39,22 +39,24 @@ const Signature = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [signatureVector, setSignatureVector] = useState<any[] | null>(null);
   const [clarification, setClarification] = useState("");
 
   const [isSignedModalOpen, setIsSignedModalOpen] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
-
-  const [loadingSign, setLoadingSign] = useState(false); // 🔹 Estado de carga para botones
+  const [loadingSign, setLoadingSign] = useState(false);
 
   const sigPad = useRef<SignatureCanvas | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
-  // Posición fija de la firma
-  const initialXPercent = 0.8;
+  const initialXPercent = 0.78;
   const initialYPercent = 0.71;
-  const clarificationOffset = 0.03;
+  const widthPercent = 0.27;
+  const heightPercent = 0.06;
+  const offsetXPercent = 0.02;
+  const offsetYPercent = -0.01;
+  const clarificationOffset = 0.01;
 
-  // 🔹 Cargar contrato desde Firestore y validar estado
   useEffect(() => {
     const fetchContract = async () => {
       if (!contractId) return;
@@ -85,37 +87,86 @@ const Signature = () => {
     fetchContract();
   }, [contractId, showToast]);
 
-  // 🔹 Restaurar firma en canvas al abrir modal si ya existe
   useEffect(() => {
-    if (showModal && sigPad.current && signaturePreview) {
-      sigPad.current.clear();
-      sigPad.current.fromDataURL(signaturePreview);
+    if (
+      showModal &&
+      sigPad.current &&
+      signatureVector &&
+      signatureVector.length > 0
+    ) {
+      setTimeout(() => {
+        sigPad.current?.fromData(signatureVector);
+      }, 50);
     }
-  }, [showModal, signaturePreview]);
+  }, [showModal, signatureVector]);
 
   const clearSignature = () => {
     sigPad.current?.clear();
     setSignaturePreview(null);
+    setSignatureVector(null);
   };
 
   const previewSignature = () => {
     if (!sigPad.current) return;
-
     if (sigPad.current.isEmpty() && !signaturePreview) {
       showToast("Debe firmar antes de previsualizar", "error", 4000);
       return;
     }
 
+    const vectorData = sigPad.current.toData(); // 🔹 Guardar vector
     const signatureData = sigPad.current.isEmpty()
       ? signaturePreview
       : sigPad.current.toDataURL("image/png");
 
+    setSignatureVector(vectorData);
     setSignaturePreview(signatureData || null);
     setShowModal(false);
   };
 
+  const getSignatureCoordsInPdf = async (
+    pageWidthPx: number,
+    pageHeightPx: number
+  ) => {
+    if (!pdfData) return null;
+    const pdfDoc = await PDFDocument.load(pdfData);
+    const lastPage = pdfDoc.getPage(pdfDoc.getPageCount() - 1);
+    const { width: pdfWidth, height: pdfHeight } = lastPage.getSize();
+
+    const sigWidthPx = pageWidthPx * widthPercent;
+    const sigHeightPx = pageHeightPx * heightPercent;
+
+    const posXPx =
+      pageWidthPx * (initialXPercent + offsetXPercent) - sigWidthPx / 2;
+    const posYPx =
+      pageHeightPx * (initialYPercent + offsetYPercent) - sigHeightPx / 2;
+
+    const signatureYOffsetPx = sigHeightPx * 0.02;
+
+    return {
+      x: (posXPx / pageWidthPx) * pdfWidth,
+      y:
+        pdfHeight -
+        ((posYPx + sigHeightPx + signatureYOffsetPx) / pageHeightPx) *
+          pdfHeight,
+      width: (sigWidthPx / pageWidthPx) * pdfWidth,
+      height: (sigHeightPx / pageHeightPx) * pdfHeight,
+    };
+  };
+
   const handleSign = async () => {
-    if (!pdfData || !signaturePreview) {
+    if (!pdfData || !pageRef.current) {
+      showToast("Error al cargar el contrato", "error", 4000);
+      return;
+    }
+
+    let finalSignature = signaturePreview;
+    if (sigPad.current && !sigPad.current.isEmpty()) {
+      finalSignature = sigPad.current.toDataURL("image/png");
+      setSignaturePreview(finalSignature);
+      setSignatureVector(sigPad.current.toData());
+    }
+
+    if (!finalSignature) {
       showToast("Debe firmar antes de enviar", "error", 4000);
       return;
     }
@@ -127,23 +178,25 @@ const Signature = () => {
 
     try {
       setLoadingSign(true);
+
+      const pageRect = pageRef.current.getBoundingClientRect();
+      const coords = await getSignatureCoordsInPdf(
+        pageRect.width,
+        pageRect.height
+      );
+
+      if (!coords) return;
+
       await signPdfAndUpload({
         pdfData,
         contractId: contractId!,
-        signatureDataUrl: signaturePreview,
+        signatureDataUrl: finalSignature!,
         clarification,
-        coordsPercent: {
-          x: initialXPercent * 100,
-          y: initialYPercent * 100,
-          widthPercent: 25,
-          heightPercent: 6,
-        },
+        coords,
       });
 
       showToast("✅ Contrato firmado y enviado correctamente", "success", 5000);
       setShowModal(false);
-
-      // 🔹 Mostrar modal de documento firmado
       setIsSigned(true);
       setIsSignedModalOpen(true);
     } catch (error) {
@@ -156,7 +209,7 @@ const Signature = () => {
 
   const handleCloseSignedModal = () => {
     setIsSignedModalOpen(false);
-    window.close(); // Cierra la ventana
+    window.close();
   };
 
   if (isSigned) {
@@ -199,35 +252,36 @@ const Signature = () => {
               >
                 <Page
                   pageNumber={index + 1}
-                  scale={1.1}
+                  scale={1.0}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                 />
                 {index + 1 === numPages && signaturePreview && !showModal && (
                   <>
-                    {/* Firma */}
                     <img
                       src={signaturePreview}
                       alt="Preview firma"
                       style={{
                         position: "absolute",
-                        width: 150,
-                        height: 50,
-                        left: `${initialXPercent * 100}%`,
-                        top: `${initialYPercent * 100}%`,
+                        width: `${widthPercent * 100}%`,
+                        left: `${(initialXPercent + offsetXPercent) * 100}%`,
+                        top: `${(initialYPercent + offsetYPercent) * 100}%`,
                         transform: "translate(-50%, -50%)",
                         zIndex: 9999,
                         pointerEvents: "none",
                       }}
                     />
-                    {/* Aclaración */}
                     {clarification && (
                       <div
                         style={{
                           position: "absolute",
-                          left: `${initialXPercent * 100}%`,
+                          left: `${(initialXPercent + offsetXPercent) * 100}%`,
                           top: `${
-                            (initialYPercent + clarificationOffset) * 100
+                            (initialYPercent +
+                              offsetYPercent +
+                              heightPercent / 2 +
+                              clarificationOffset) *
+                            100
                           }%`,
                           transform: "translate(-50%, -50%)",
                           fontSize: "12px",
@@ -251,17 +305,22 @@ const Signature = () => {
       </PdfWrapper>
 
       <Footer>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{ marginRight: 20 }}
-          disabled={loadingSign}
-        >
-          {loadingSign
-            ? ""
-            : signaturePreview
-            ? "Volver a editar"
-            : "Firmar contrato"}
-        </button>
+        {signaturePreview && !showModal && !loadingSign && (
+          <button
+            onClick={() => setShowModal(true)}
+            style={{ marginRight: 20 }}
+          >
+            Editar firma
+          </button>
+        )}
+        {!signaturePreview && (
+          <button
+            onClick={() => setShowModal(true)}
+            style={{ marginRight: 20 }}
+          >
+            Firmar contrato
+          </button>
+        )}
         {signaturePreview && !showModal && (
           <button onClick={handleSign} disabled={loadingSign}>
             {loadingSign ? (
@@ -284,7 +343,7 @@ const Signature = () => {
               penColor="black"
               canvasProps={{
                 width: 350,
-                height: 150,
+                height: 250,
                 style: {
                   border: "1px solid black",
                   display: "block",

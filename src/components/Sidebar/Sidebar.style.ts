@@ -11,7 +11,7 @@ export const SidebarContainer = styled.div`
 
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  justify-content: space-between; /* Empuja el footer abajo */
 
   @media (max-width: 768px) {
     width: 100%;
@@ -42,6 +42,7 @@ export const NavItemsWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 20px;
 
   @media (max-width: 768px) {
     flex-direction: row;
@@ -66,21 +67,49 @@ export const NavItem = styled.div`
     background-color: rgba(255, 255, 255, 0.15);
   }
 
+  &.active {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+
   @media (max-width: 768px) {
     font-size: 14px;
     padding: 6px 10px;
   }
 `;
 
-export const SidebarFooter = styled("div")({
-  display: "flex",
-  alignItems: "center",
-  cursor: "pointer",
-  padding: "8px 12px",
-  borderRadius: "8px",
-  backgroundColor: "#334155",
-  transition: "all 0.2s ease",
-  "&:hover": {
-    backgroundColor: "#475569",
-  },
-});
+export const SidebarBottom = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto; /* Empuja al fondo */
+`;
+
+export const SidebarFooter = styled.div`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: #334155;
+  transition: all 0.2s ease;
+  &:hover {
+    background-color: #475569;
+  }
+`;
+
+export const SidebarSignature = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  margin-top: 8px;
+  opacity: 0.9;
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.4);
+    margin: 6px 0;
+  }
+`;

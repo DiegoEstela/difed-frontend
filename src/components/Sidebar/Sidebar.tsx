@@ -4,6 +4,8 @@ import {
   NavItemsWrapper,
   SidebarContainer,
   SidebarFooter,
+  SidebarBottom,
+  SidebarSignature,
 } from "./Sidebar.style";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Description, Logout } from "@mui/icons-material";
@@ -42,13 +44,25 @@ const Sidebar = () => {
         </NavItem>
       </NavItemsWrapper>
 
-      {/* Footer con logout */}
-      <SidebarFooter onClick={handleLogout}>
-        <Logout fontSize="small" />
-        <Typography variant="body2" ml={1}>
-          Cerrar sesión
-        </Typography>
-      </SidebarFooter>
+      {/* Footer */}
+      <SidebarBottom>
+        <SidebarFooter onClick={handleLogout}>
+          <Logout fontSize="small" />
+          <Typography variant="body2" ml={1}>
+            Cerrar sesión
+          </Typography>
+        </SidebarFooter>
+
+        <SidebarSignature>
+          <div className="divider" />
+          <Typography variant="caption" style={{ opacity: 0.8 }}>
+            Creado por FarestLab 2025
+          </Typography>
+          <Typography variant="caption" style={{ opacity: 0.6 }}>
+            v1.0.0
+          </Typography>
+        </SidebarSignature>
+      </SidebarBottom>
     </SidebarContainer>
   );
 };

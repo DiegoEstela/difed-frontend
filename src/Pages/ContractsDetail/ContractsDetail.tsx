@@ -12,7 +12,7 @@ interface Contract {
   dni: string;
   signedAt?: any;
   status: string;
-  url: string; // URL del PDF en Firebase Storage
+  url: string;
 }
 
 const ContractDetail = () => {
@@ -64,7 +64,7 @@ const ContractDetail = () => {
 
       <iframe
         src={contract.url}
-        style={{ width: "70vw", height: "75vh", border: "1px solid #ccc" }}
+        style={{ width: "80vw", height: "75vh", border: "1px solid #ccc" }}
         title="Vista previa del contrato"
       />
 

@@ -29,8 +29,8 @@ const NotificationBell = () => {
     <div
       style={{
         position: "fixed",
-        top: 50,
-        right: 50,
+        top: "6%",
+        right: "3%",
         zIndex: 2000,
       }}
     >
