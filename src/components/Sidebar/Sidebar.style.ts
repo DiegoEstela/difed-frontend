@@ -71,3 +71,16 @@ export const NavItem = styled.div`
     padding: 6px 10px;
   }
 `;
+
+export const SidebarFooter = styled("div")({
+  display: "flex",
+  alignItems: "center",
+  cursor: "pointer",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  backgroundColor: "#334155",
+  transition: "all 0.2s ease",
+  "&:hover": {
+    backgroundColor: "#475569",
+  },
+});

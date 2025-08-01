@@ -3,23 +3,52 @@ import {
   NavItem,
   NavItemsWrapper,
   SidebarContainer,
+  SidebarFooter,
 } from "./Sidebar.style";
-import { useNavigate } from "react-router-dom";
-import { Home, Description } from "@mui/icons-material";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Home, Description, Logout } from "@mui/icons-material";
+
+import { Typography } from "@mui/material";
+import { useAuth } from "../../hook/auth/useAuth";
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/login";
+  };
+
   return (
     <SidebarContainer>
-      <Logo>Difed</Logo>
+      {/* Logo */}
+      <Logo>DIFED</Logo>
+
+      {/* Navegación */}
       <NavItemsWrapper>
-        <NavItem onClick={() => navigate("/")}>
+        <NavItem
+          onClick={() => navigate("/")}
+          className={location.pathname === "/" ? "active" : ""}
+        >
           <Home fontSize="small" /> Inicio
         </NavItem>
-        <NavItem onClick={() => navigate("/contratos")}>
+        <NavItem
+          onClick={() => navigate("/contratos")}
+          className={location.pathname.startsWith("/contratos") ? "active" : ""}
+        >
           <Description fontSize="small" /> Contratos
         </NavItem>
       </NavItemsWrapper>
+
+      {/* Footer con logout */}
+      <SidebarFooter onClick={handleLogout}>
+        <Logout fontSize="small" />
+        <Typography variant="body2" ml={1}>
+          Cerrar sesión
+        </Typography>
+      </SidebarFooter>
     </SidebarContainer>
   );
 };

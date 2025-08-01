@@ -1,10 +1,22 @@
 import Container from "../../styles/Container";
+import logo from "../../assets/logoDifed.png";
 
 const Home = () => {
   return (
-    <Container>
-      <h1>Difed</h1>
-      <p>Bienvenido al sistema de gestión de contratos.</p>
+    <Container
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+
+        flexDirection: "column",
+      }}
+    >
+      <img
+        src={logo}
+        alt="Difed Logo"
+        style={{ width: "600px", height: "auto" }}
+      />
     </Container>
   );
 };

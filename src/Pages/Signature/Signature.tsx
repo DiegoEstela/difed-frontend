@@ -16,11 +16,23 @@ import {
   Canvas,
   ButtonRow,
 } from "./Signature.style";
+import { useToast } from "../../hook/toast/useToast";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const Signature = () => {
   const { contractId } = useParams();
+  const { showToast } = useToast();
+
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
@@ -29,17 +41,20 @@ const Signature = () => {
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [clarification, setClarification] = useState("");
 
+  const [isSignedModalOpen, setIsSignedModalOpen] = useState(false);
+  const [isSigned, setIsSigned] = useState(false);
+
+  const [loadingSign, setLoadingSign] = useState(false); // 🔹 Estado de carga para botones
+
   const sigPad = useRef<SignatureCanvas | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
   // Posición fija de la firma
   const initialXPercent = 0.8;
   const initialYPercent = 0.71;
-
-  // Offset para la aclaración
   const clarificationOffset = 0.03;
 
-  // 🔹 Cargar contrato desde Firebase
+  // 🔹 Cargar contrato desde Firestore y validar estado
   useEffect(() => {
     const fetchContract = async () => {
       if (!contractId) return;
@@ -47,21 +62,28 @@ const Signature = () => {
       const snapshot = await getDoc(contractRef);
 
       if (!snapshot.exists()) {
-        alert("Contrato no encontrado");
+        showToast("Contrato no encontrado", "error", 5000);
+        setIsSigned(true);
+        setIsSignedModalOpen(true);
         return;
       }
 
-      const data = snapshot.data();
+      const data = snapshot.data() as any;
       const url = data.url as string;
       setPdfUrl(url);
 
       const response = await fetch(url);
       const buffer = await response.arrayBuffer();
       setPdfData(buffer);
+
+      if (data.status === "firmado") {
+        setIsSigned(true);
+        setIsSignedModalOpen(true);
+      }
     };
 
     fetchContract();
-  }, [contractId]);
+  }, [contractId, showToast]);
 
   // 🔹 Restaurar firma en canvas al abrir modal si ya existe
   useEffect(() => {
@@ -79,54 +101,87 @@ const Signature = () => {
   const previewSignature = () => {
     if (!sigPad.current) return;
 
-    // Caso 1: ya hay firma previa aunque el canvas esté vacío
-    if (sigPad.current.isEmpty() && signaturePreview) {
-      setShowModal(false);
+    if (sigPad.current.isEmpty() && !signaturePreview) {
+      showToast("Debe firmar antes de previsualizar", "error", 4000);
       return;
     }
 
-    // Caso 2: no hay firma previa ni dibujo
-    if (sigPad.current.isEmpty()) {
-      alert("Debe firmar antes de previsualizar");
-      return;
-    }
+    const signatureData = sigPad.current.isEmpty()
+      ? signaturePreview
+      : sigPad.current.toDataURL("image/png");
 
-    // Caso 3: nueva firma dibujada
-    const signatureData = sigPad.current.toDataURL("image/png");
-    setSignaturePreview(signatureData);
-    setShowModal(false); // Cerramos modal para ver PDF completo
+    setSignaturePreview(signatureData || null);
+    setShowModal(false);
   };
 
   const handleSign = async () => {
-    if (!pdfData || !signaturePreview) return alert("Falta firma o PDF");
-    if (!clarification.trim()) return alert("Debe ingresar su aclaración");
+    if (!pdfData || !signaturePreview) {
+      showToast("Debe firmar antes de enviar", "error", 4000);
+      return;
+    }
 
-    // Guardamos usando la posición fija
-    const posXPercent = initialXPercent * 100;
-    const posYPercent = initialYPercent * 100;
+    if (!clarification.trim()) {
+      showToast("Debe ingresar su aclaración", "error", 4000);
+      return;
+    }
 
     try {
+      setLoadingSign(true);
       await signPdfAndUpload({
         pdfData,
         contractId: contractId!,
         signatureDataUrl: signaturePreview,
         clarification,
         coordsPercent: {
-          x: posXPercent,
-          y: posYPercent,
+          x: initialXPercent * 100,
+          y: initialYPercent * 100,
           widthPercent: 25,
           heightPercent: 6,
         },
       });
 
-      alert("✅ Contrato firmado y enviado correctamente!");
+      showToast("✅ Contrato firmado y enviado correctamente", "success", 5000);
       setShowModal(false);
-      // 👇 Mantenemos la firma para poder editar aclaración después si se desea
+
+      // 🔹 Mostrar modal de documento firmado
+      setIsSigned(true);
+      setIsSignedModalOpen(true);
     } catch (error) {
       console.error(error);
-      alert("❌ Hubo un error al firmar el contrato");
+      showToast("❌ Hubo un error al firmar el contrato", "error", 5000);
+    } finally {
+      setLoadingSign(false);
     }
   };
+
+  const handleCloseSignedModal = () => {
+    setIsSignedModalOpen(false);
+    window.close(); // Cierra la ventana
+  };
+
+  if (isSigned) {
+    return (
+      <Dialog open={isSignedModalOpen} onClose={handleCloseSignedModal}>
+        <DialogTitle>Documento firmado</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Este documento ha sido firmado correctamente y no se podrá volver a
+            ingresar. Si necesita asistencia, comuníquese con el equipo de
+            Difed.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseSignedModal}
+            variant="contained"
+            color="primary"
+          >
+            Aceptar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   return (
     <Container>
@@ -178,7 +233,7 @@ const Signature = () => {
                           fontSize: "12px",
                           fontWeight: 500,
                           color: "black",
-                          background: "rgba(255,255,255,0.6)", // opcional para contraste
+                          background: "rgba(255,255,255,0.6)",
                           padding: "1px 4px",
                           borderRadius: "4px",
                           zIndex: 9999,
@@ -196,11 +251,25 @@ const Signature = () => {
       </PdfWrapper>
 
       <Footer>
-        <button onClick={() => setShowModal(true)} style={{ marginRight: 20 }}>
-          {signaturePreview ? "Volver a editar" : "Firmar contrato"}
+        <button
+          onClick={() => setShowModal(true)}
+          style={{ marginRight: 20 }}
+          disabled={loadingSign}
+        >
+          {loadingSign
+            ? ""
+            : signaturePreview
+            ? "Volver a editar"
+            : "Firmar contrato"}
         </button>
         {signaturePreview && !showModal && (
-          <button onClick={handleSign}>Firmar y Enviar</button>
+          <button onClick={handleSign} disabled={loadingSign}>
+            {loadingSign ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              "Firmar y Enviar"
+            )}
+          </button>
         )}
       </Footer>
 
@@ -230,10 +299,25 @@ const Signature = () => {
               onChange={(e) => setClarification(e.target.value)}
             />
             <ButtonRow>
-              <button onClick={clearSignature}>Borrar</button>
-              <button onClick={previewSignature}>Previsualizar</button>
-              <button onClick={handleSign}>Firmar y Enviar</button>
-              <button onClick={() => setShowModal(false)}>Cancelar</button>
+              <button onClick={clearSignature} disabled={loadingSign}>
+                Borrar
+              </button>
+              <button onClick={previewSignature} disabled={loadingSign}>
+                Previsualizar
+              </button>
+              <button onClick={handleSign} disabled={loadingSign}>
+                {loadingSign ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  "Firmar y Enviar"
+                )}
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                disabled={loadingSign}
+              >
+                Cancelar
+              </button>
             </ButtonRow>
           </ModalContent>
         </ModalOverlay>

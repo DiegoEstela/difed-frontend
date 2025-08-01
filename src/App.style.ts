@@ -3,8 +3,9 @@ import palette from "./styles/palette";
 
 export const Layout = styled.div`
   display: flex;
-  min-height: 100vh;
+  min-height: 98vh;
   width: 100vw;
+  height: 100vh;
   background-color: ${palette.background};
 
   @media (max-width: 768px) {
@@ -14,9 +15,11 @@ export const Layout = styled.div`
 
 export const Content = styled.div`
   flex: 1;
-  padding: 20px 10px 0px 10px;
-  overflow-y: auto;
-
+  padding: 32px;
+  overflow: hidden; // evita scroll interno
+  display: flex;
+  justify-content: center;
+  align-items: center;
   @media (max-width: 768px) {
     padding: 16px;
   }
