@@ -1,34 +1,39 @@
-// src/Pages/Contracts/Contracts.style.ts
 import styled from "@emotion/styled";
+import { Paper } from "@mui/material";
 
-export const Container = styled.div`
-  flex: 1;
-  background-color: #fff;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+export const CardsWrapper = styled.div<{ isMobile?: boolean }>`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: ${(props) => (props.isMobile ? "1rem" : "2rem")};
+  width: 100%;
+  max-width: 900px;
 `;
 
-export const OptionCard = styled.div`
+export const ActionCard = styled(Paper)<{ isMobile?: boolean }>`
+  width: ${(props) => (props.isMobile ? "100%" : "200px")};
+  height: ${(props) => (props.isMobile ? "120px" : "180px")};
+  padding: ${(props) => (props.isMobile ? "16px" : "32px")};
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  background: #f6f9fc;
-  padding: 32px;
+  gap: ${(props) => (props.isMobile ? "0.5rem" : "1rem")};
   border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  width: 200px;
+  transition: 0.2s;
 
-  &:hover {
-    background-color: #e4f1ff;
-    transform: translateY(-4px);
+  /* Hover solo en desktop */
+  @media (hover: hover) {
+    &:hover {
+      background-color: #52a0b6;
+      color: white;
+    }
   }
+`;
 
-  h3 {
-    margin: 0;
-  }
+export const IconWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;

@@ -6,16 +6,19 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { signPdfAndUpload } from "../../utils/signPdfAndUpload";
+import { useToast } from "../../hook/toast/useToast";
+import { useIsMobile } from "../../hook/common/useIsMobile";
+
 import {
   Container,
   PdfWrapper,
   Footer,
   ModalOverlay,
   ModalContent,
-  Canvas,
+  CanvasWrapper,
   ButtonRow,
 } from "./Signature.style";
-import { useToast } from "../../hook/toast/useToast";
+
 import {
   Dialog,
   DialogTitle,
@@ -32,6 +35,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 const Signature = () => {
   const { contractId } = useParams();
   const { showToast } = useToast();
+  const isMobile = useIsMobile();
 
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
@@ -113,7 +117,7 @@ const Signature = () => {
       return;
     }
 
-    const vectorData = sigPad.current.toData(); // 🔹 Guardar vector
+    const vectorData = sigPad.current.toData();
     const signatureData = sigPad.current.isEmpty()
       ? signaturePreview
       : sigPad.current.toDataURL("image/png");
@@ -237,8 +241,8 @@ const Signature = () => {
   }
 
   return (
-    <Container>
-      <PdfWrapper>
+    <Container isMobile={isMobile}>
+      <PdfWrapper isMobile={isMobile}>
         {pdfUrl && (
           <Document
             file={pdfUrl}
@@ -252,7 +256,7 @@ const Signature = () => {
               >
                 <Page
                   pageNumber={index + 1}
-                  scale={1.0}
+                  scale={isMobile ? 0.9 : 1.0}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                 />
@@ -304,22 +308,12 @@ const Signature = () => {
         )}
       </PdfWrapper>
 
-      <Footer>
+      <Footer isMobile={isMobile}>
         {signaturePreview && !showModal && !loadingSign && (
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ marginRight: 20 }}
-          >
-            Editar firma
-          </button>
+          <button onClick={() => setShowModal(true)}>Editar firma</button>
         )}
         {!signaturePreview && (
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ marginRight: 20 }}
-          >
-            Firmar contrato
-          </button>
+          <button onClick={() => setShowModal(true)}>Firmar contrato</button>
         )}
         {signaturePreview && !showModal && (
           <button onClick={handleSign} disabled={loadingSign}>
@@ -334,49 +328,51 @@ const Signature = () => {
 
       {showModal && (
         <ModalOverlay>
-          <ModalContent>
+          <ModalContent isMobile={isMobile}>
             <h3>Firme aquí</h3>
-            <Canvas
-              ref={(ref) => {
-                sigPad.current = ref;
-              }}
-              penColor="black"
-              canvasProps={{
-                width: 350,
-                height: 250,
-                style: {
-                  border: "1px solid black",
-                  display: "block",
-                  margin: "0 auto",
-                },
-              }}
-            />
+            <CanvasWrapper>
+              <SignatureCanvas
+                ref={(ref) => {
+                  sigPad.current = ref;
+                }}
+                penColor="black"
+                canvasProps={{
+                  width: 350,
+                  height: 250,
+                }}
+              />
+            </CanvasWrapper>
             <input
               type="text"
               placeholder="Aclaración (Nombre y Apellido)"
               value={clarification}
               onChange={(e) => setClarification(e.target.value)}
             />
-            <ButtonRow>
-              <button onClick={clearSignature} disabled={loadingSign}>
-                Borrar
-              </button>
-              <button onClick={previewSignature} disabled={loadingSign}>
-                Previsualizar
-              </button>
-              <button onClick={handleSign} disabled={loadingSign}>
-                {loadingSign ? (
-                  <CircularProgress size={18} color="inherit" />
-                ) : (
-                  "Firmar y Enviar"
-                )}
-              </button>
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={loadingSign}
-              >
-                Cancelar
-              </button>
+            <ButtonRow isMobile={isMobile}>
+              <div className="top-buttons">
+                <button onClick={clearSignature} disabled={loadingSign}>
+                  Borrar
+                </button>
+                <button onClick={previewSignature} disabled={loadingSign}>
+                  Previsualizar
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  disabled={loadingSign}
+                >
+                  Cancelar
+                </button>
+              </div>
+
+              <div className="primary-button">
+                <button onClick={handleSign} disabled={loadingSign}>
+                  {loadingSign ? (
+                    <CircularProgress size={18} color="inherit" />
+                  ) : (
+                    "Firmar y Enviar"
+                  )}
+                </button>
+              </div>
             </ButtonRow>
           </ModalContent>
         </ModalOverlay>

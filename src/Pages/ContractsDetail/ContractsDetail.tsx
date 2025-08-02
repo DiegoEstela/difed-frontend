@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-
 import { Button, CircularProgress, Snackbar, Alert } from "@mui/material";
 import { db } from "../../services/firebase";
+import { useIsMobile } from "../../hook/common/useIsMobile";
+
+import { Wrapper, Title, Iframe } from "./ContractDetail.style";
 
 interface Contract {
   id: string;
@@ -18,6 +20,7 @@ interface Contract {
 const ContractDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,13 +45,9 @@ const ContractDetail = () => {
   const handleConfirm = async () => {
     if (!id) return;
 
-    await updateDoc(doc(db, "contracts", id), {
-      status: "confirmado",
-    });
-
+    await updateDoc(doc(db, "contracts", id), { status: "confirmado" });
     setOpenSnackbar(true);
 
-    // Opcional: volver al home después de 1.5s
     setTimeout(() => navigate("/"), 1500);
   };
 
@@ -57,14 +56,14 @@ const ContractDetail = () => {
   if (!contract) return <p style={{ padding: 20 }}>Contrato no encontrado</p>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>
+    <Wrapper isMobile={isMobile}>
+      <Title isMobile={isMobile}>
         Contrato de {contract.nombre} {contract.apellido} - {contract.dni}
-      </h2>
+      </Title>
 
-      <iframe
+      <Iframe
+        isMobile={isMobile}
         src={contract.url}
-        style={{ width: "80vw", height: "75vh", border: "1px solid #ccc" }}
         title="Vista previa del contrato"
       />
 
@@ -72,14 +71,16 @@ const ContractDetail = () => {
         <Button
           variant="contained"
           color="success"
-          style={{ marginTop: 20 }}
+          style={{
+            marginTop: isMobile ? 12 : 20,
+            width: isMobile ? "90%" : "auto",
+          }}
           onClick={handleConfirm}
         >
           Confirmar firma
         </Button>
       )}
 
-      {/* Snackbar de confirmación */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={2000}
@@ -94,7 +95,7 @@ const ContractDetail = () => {
           ✅ Contrato confirmado correctamente
         </Alert>
       </Snackbar>
-    </div>
+    </Wrapper>
   );
 };
 

@@ -38,16 +38,16 @@ export const Logo = styled.h1`
   }
 `;
 
-export const NavItemsWrapper = styled.div`
+export const NavItemsWrapper = styled.div<{ isDrawer?: boolean }>`
   display: flex;
-  flex-direction: column;
+  flex-direction: ${(props) => (props.isDrawer ? "column" : "column")};
   gap: 12px;
   margin-top: 20px;
 
   @media (max-width: 768px) {
-    flex-direction: row;
-    gap: 16px;
-    justify-content: center;
+    flex-direction: ${(props) => (props.isDrawer ? "column" : "row")};
+    gap: ${(props) => (props.isDrawer ? "12px" : "16px")};
+    justify-content: ${(props) => (props.isDrawer ? "flex-start" : "center")};
     width: 100%;
   }
 `;
@@ -111,5 +111,31 @@ export const SidebarSignature = styled.div`
     height: 1px;
     background-color: rgba(255, 255, 255, 0.4);
     margin: 6px 0;
+  }
+`;
+
+export const MobileHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background-color: #52a0b6;
+  height: 56px;
+  width: 100vw;
+  box-sizing: border-box;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`;
+
+export const MobileRight = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 40px;
+
+  .notification-bell {
+    transform: scale(0.9);
   }
 `;

@@ -1,78 +1,54 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Box, Typography, Paper } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Typography } from "@mui/material";
+
 import Container from "../../styles/Container";
-import { useState } from "react";
 import { UploadContractModal } from "../../components/Modal/UploadContractModal";
+import { useIsMobile } from "../../hook/common/useIsMobile";
+
+import { CardsWrapper, ActionCard, IconWrapper } from "./Contracts.style";
 
 const Contracts = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <Container>
-      <Typography variant="h4" fontWeight={700} mb={2}>
+    <Container isMobile={isMobile}>
+      <Typography
+        variant={isMobile ? "h5" : "h4"}
+        fontWeight={700}
+        mb={2}
+        textAlign="center"
+        width="100%"
+      >
         Gestión de Contratos
       </Typography>
-      <Typography variant="body1" color="text.secondary" mb={4}>
-        Seleccioná una acción para continuar:
-      </Typography>
 
-      <Box display="flex" gap={4} flexWrap="wrap" justifyContent="center">
-        <Paper
+      <CardsWrapper isMobile={isMobile}>
+        <ActionCard
+          isMobile={isMobile}
           onClick={() => navigate("/ver-contratos")}
-          elevation={3}
-          sx={{
-            width: 200,
-            height: 180,
-            p: 4,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2,
-            borderRadius: 4,
-            cursor: "pointer",
-            transition: "0.2s",
-            "&:hover": {
-              backgroundColor: "primary.light",
-              color: "#fff",
-            },
-          }}
         >
-          <VisibilityIcon fontSize="large" />
+          <IconWrapper>
+            <VisibilityIcon fontSize={isMobile ? "medium" : "large"} />
+          </IconWrapper>
           <Typography variant="subtitle1" fontWeight={600}>
             Ver contratos
           </Typography>
-        </Paper>
+        </ActionCard>
 
-        <Paper
-          onClick={() => setIsModalOpen(true)}
-          sx={{
-            width: 200,
-            height: 180,
-            p: 4,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2,
-            borderRadius: 4,
-            cursor: "pointer",
-            transition: "0.2s",
-            "&:hover": {
-              backgroundColor: "primary.light",
-              color: "#fff",
-            },
-          }}
-        >
-          <UploadFileIcon fontSize="large" />
+        <ActionCard isMobile={isMobile} onClick={() => setIsModalOpen(true)}>
+          <IconWrapper>
+            <UploadFileIcon fontSize={isMobile ? "medium" : "large"} />
+          </IconWrapper>
           <Typography variant="subtitle1" fontWeight={600}>
             Cargar contrato
           </Typography>
-        </Paper>
-      </Box>
+        </ActionCard>
+      </CardsWrapper>
 
       {/* MODAL */}
       <UploadContractModal

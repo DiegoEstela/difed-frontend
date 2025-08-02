@@ -15,10 +15,13 @@ import ContractDetail from "./Pages/ContractsDetail/ContractsDetail";
 import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 import { useAuth } from "./hook/auth/useAuth";
 import LoginPage from "./Pages/Login/LoginPages";
+import { useIsMobile } from "./hook/common/useIsMobile";
+import UploadFab from "./components/common/UploadFab";
 
 function AppContent() {
   const { user } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   // 🔹 Solo ocultamos sidebar en /signature/:id
   const isSignaturePage =
@@ -26,14 +29,14 @@ function AppContent() {
     !location.pathname.startsWith("/signatureDetail");
 
   return (
-    <Layout>
+    <Layout isMobile={isMobile}>
       {/* 🔹 Solo mostrar Sidebar si NO estamos en modo firma */}
       {!isSignaturePage && <Sidebar />}
 
-      <Content>
-        {/* 🔹 Mostrar campana solo si hay usuario y no estamos en modo firma */}
-        {user && !isSignaturePage && <NotificationBell />}
-
+      <Content isMobile={isMobile}>
+        {/* 🔹 Mostrar campana solo en desktop */}
+        {user && !isSignaturePage && !isMobile && <NotificationBell />}
+        {user && !isSignaturePage && <UploadFab />} {/* FAB solo mobile */}
         <Routes>
           {/* Rutas públicas */}
           <Route path="/login" element={<LoginPage />} />
