@@ -5,7 +5,12 @@ import { Button, CircularProgress, Snackbar, Alert } from "@mui/material";
 import { db } from "../../services/firebase";
 import { useIsMobile } from "../../hook/common/useIsMobile";
 
-import { Wrapper, Title, Iframe } from "./ContractDetail.style";
+import { Wrapper, Iframe } from "./ContractDetail.style";
+
+import { Document, Page, pdfjs } from "react-pdf";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
+
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface Contract {
   id: string;
@@ -25,6 +30,7 @@ const ContractDetail = () => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [numPages, setNumPages] = useState<number>(0);
 
   useEffect(() => {
     if (!id) return;
@@ -51,35 +57,100 @@ const ContractDetail = () => {
     setTimeout(() => navigate("/"), 1500);
   };
 
+  const handleDownload = () => {
+    if (!contract?.url) return;
+    const link = document.createElement("a");
+    link.href = contract.url;
+    link.download = `Contrato-${contract.nombre}-${contract.apellido}.pdf`;
+    link.target = "_blank";
+    link.click();
+  };
+
   if (loading) return <CircularProgress style={{ margin: 40 }} />;
 
   if (!contract) return <p style={{ padding: 20 }}>Contrato no encontrado</p>;
 
   return (
     <Wrapper isMobile={isMobile}>
-      <Title isMobile={isMobile}>
-        Contrato de {contract.nombre} {contract.apellido} - {contract.dni}
-      </Title>
-
-      <Iframe
-        isMobile={isMobile}
-        src={contract.url}
-        title="Vista previa del contrato"
-      />
-
-      {contract.status === "firmado" && (
-        <Button
-          variant="contained"
-          color="success"
+      {/* 🔹 Desktop -> Iframe / Mobile -> React-PDF */}
+      {!isMobile ? (
+        <Iframe
+          isMobile={isMobile}
+          src={contract.url}
+          title="Vista previa del contrato"
+        />
+      ) : (
+        <div
           style={{
-            marginTop: isMobile ? 12 : 20,
-            width: isMobile ? "90%" : "auto",
+            width: "100%",
+            maxHeight: "65vh",
+            overflowX: "auto",
+            overflowY: "auto",
+            background: "#f5f7fa",
+            borderRadius: 12,
+            padding: 8,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            display: "flex",
+            justifyContent: "center",
           }}
-          onClick={handleConfirm}
         >
-          Confirmar firma
-        </Button>
+          <Document
+            file={contract.url}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          >
+            {Array.from(new Array(numPages), (_, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                scale={isMobile ? 1.3 : 1.0}
+              />
+            ))}
+          </Document>
+        </div>
       )}
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 12,
+          marginTop: isMobile ? 16 : 24,
+          width: isMobile ? "90%" : "auto",
+          justifyContent: isMobile ? "center" : "center",
+        }}
+      >
+        {contract.status === "firmado" && (
+          <Button
+            variant="contained"
+            color="success"
+            style={{
+              flex: isMobile ? 1 : undefined,
+              fontSize: isMobile ? 14 : 12,
+              padding: isMobile ? "12px 0" : "6px 18px",
+              minWidth: isMobile ? "auto" : 160,
+            }}
+            onClick={handleConfirm}
+          >
+            Confirmar firma
+          </Button>
+        )}
+
+        <Button
+          variant="outlined"
+          color="primary"
+          style={{
+            flex: isMobile ? 1 : undefined,
+            fontSize: isMobile ? 14 : 12,
+            padding: isMobile ? "12px 0" : "6px 18px",
+            minWidth: isMobile ? "auto" : 160,
+          }}
+          onClick={handleDownload}
+        >
+          Descargar contrato
+        </Button>
+      </div>
 
       <Snackbar
         open={openSnackbar}

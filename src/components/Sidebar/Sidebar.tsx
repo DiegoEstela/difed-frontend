@@ -142,7 +142,7 @@ const Sidebar = () => {
             Creado por FarestLab 2025
           </Typography>
           <Typography variant="caption" style={{ opacity: 0.6 }}>
-            v1.0.0
+            v1.1.0
           </Typography>
         </SidebarSignature>
       </SidebarBottom>

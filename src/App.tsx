@@ -17,6 +17,7 @@ import { useAuth } from "./hook/auth/useAuth";
 import LoginPage from "./Pages/Login/LoginPages";
 import { useIsMobile } from "./hook/common/useIsMobile";
 import UploadFab from "./components/common/UploadFab";
+import ContractView from "./Pages/ContractsView/ContractView";
 
 function AppContent() {
   const { user } = useAuth();
@@ -67,6 +68,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route path="/contracts-view" element={<ContractView />} />
         </Routes>
       </Content>
     </Layout>

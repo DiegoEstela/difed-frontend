@@ -8,7 +8,7 @@ const UploadFab = () => {
   const isMobile = useIsMobile();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  if (!isMobile) return null; // Solo visible en mobile
+  if (!isMobile) return null; // 🔹 Solo se muestra en mobile
 
   return (
     <>
@@ -16,15 +16,17 @@ const UploadFab = () => {
         color="primary"
         aria-label="Subir contrato"
         onClick={() => setIsModalOpen(true)}
-        style={{
+        sx={{
           position: "fixed",
-          bottom: "80px", // justo arriba del footer / botón firmar
-          right: "20px",
-          zIndex: 2000,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+          bottom: 24, // 🔹 Separado del borde inferior
+          right: 24, // 🔹 Separado del borde derecho
+          zIndex: 2500, // 🔹 Por encima de otros elementos
+          width: 56, // 🔹 Tamaño fijo estilo FAB nativo
+          height: 56,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)", // 🔹 Sombra consistente
         }}
       >
-        <UploadFileIcon />
+        <UploadFileIcon sx={{ fontSize: 28 }} /> {/* 🔹 Icono uniforme */}
       </Fab>
 
       <UploadContractModal

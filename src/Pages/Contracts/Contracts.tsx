@@ -30,7 +30,7 @@ const Contracts = () => {
       <CardsWrapper isMobile={isMobile}>
         <ActionCard
           isMobile={isMobile}
-          onClick={() => navigate("/ver-contratos")}
+          onClick={() => navigate("/contracts-view")}
         >
           <IconWrapper>
             <VisibilityIcon fontSize={isMobile ? "medium" : "large"} />
