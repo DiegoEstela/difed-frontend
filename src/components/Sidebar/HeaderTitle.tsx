@@ -1,26 +1,6 @@
 import { Typography } from "@mui/material";
-import { useIsMobile } from "../../hook/common/useIsMobile";
 
 const HeaderTitle = () => {
-  const isMobile = useIsMobile();
-
-  if (!isMobile) {
-    // 🔹 Desktop: texto normal
-    return (
-      <Typography
-        variant="h6"
-        style={{
-          color: "white",
-          fontWeight: 700,
-          flex: 1,
-          textAlign: "center",
-        }}
-      >
-        DIFED
-      </Typography>
-    );
-  }
-
   // 🔹 Mobile: branding moderno
   return (
     <div

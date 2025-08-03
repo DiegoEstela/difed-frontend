@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { Button, CircularProgress, Snackbar, Alert } from "@mui/material";
+import { doc, getDoc } from "firebase/firestore";
+import { Button, CircularProgress } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
+
 import { db } from "../../services/firebase";
 import { useIsMobile } from "../../hook/common/useIsMobile";
 
@@ -9,6 +11,9 @@ import { Wrapper, Iframe } from "./ContractDetail.style";
 
 import { Document, Page, pdfjs } from "react-pdf";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
+import { confirmAndSendContract } from "../../services/contracts/confirmAndSendContract";
+import { useToast } from "../../hook/toast/useToast";
+import ConfirmSendModal from "../../components/Modal/ConfirmSendModal";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -26,11 +31,27 @@ const ContractDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { showToast } = useToast();
 
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
+
+  const [openModal, setOpenModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+
+  const { mutate: sendContract, isPending } = useMutation({
+    mutationFn: confirmAndSendContract,
+    onSuccess: () => {
+      showToast("Contrato enviado correctamente", "success", 3000);
+      handleCloseModal();
+      setTimeout(() => navigate("/"), 1500);
+    },
+    onError: () => {
+      showToast("Error al enviar el contrato", "error", 3000);
+    },
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -48,15 +69,6 @@ const ContractDetail = () => {
     fetchContract();
   }, [id]);
 
-  const handleConfirm = async () => {
-    if (!id) return;
-
-    await updateDoc(doc(db, "contracts", id), { status: "confirmado" });
-    setOpenSnackbar(true);
-
-    setTimeout(() => navigate("/"), 1500);
-  };
-
   const handleDownload = () => {
     if (!contract?.url) return;
     const link = document.createElement("a");
@@ -64,6 +76,22 @@ const ContractDetail = () => {
     link.download = `Contrato-${contract.nombre}-${contract.apellido}.pdf`;
     link.target = "_blank";
     link.click();
+  };
+
+  const handleOpenModal = () => setOpenModal(true);
+  const handleCloseModal = () => {
+    setEmail("");
+    setRecipientName("");
+    setOpenModal(false);
+  };
+
+  const handleSendEmail = () => {
+    if (!id || !email || !recipientName) return;
+    sendContract({
+      contractId: id,
+      email,
+      recipientName,
+    });
   };
 
   if (loading) return <CircularProgress style={{ margin: 40 }} />;
@@ -111,6 +139,7 @@ const ContractDetail = () => {
         </div>
       )}
 
+      {/* 🔹 Botones */}
       <div
         style={{
           display: "flex",
@@ -118,7 +147,7 @@ const ContractDetail = () => {
           gap: 12,
           marginTop: isMobile ? 16 : 24,
           width: isMobile ? "90%" : "auto",
-          justifyContent: isMobile ? "center" : "center",
+          justifyContent: "center",
         }}
       >
         {contract.status === "firmado" && (
@@ -131,9 +160,9 @@ const ContractDetail = () => {
               padding: isMobile ? "12px 0" : "6px 18px",
               minWidth: isMobile ? "auto" : 160,
             }}
-            onClick={handleConfirm}
+            onClick={handleOpenModal}
           >
-            Confirmar firma
+            Confirmar y Enviar
           </Button>
         )}
 
@@ -152,20 +181,17 @@ const ContractDetail = () => {
         </Button>
       </div>
 
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={2000}
-        onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setOpenSnackbar(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          ✅ Contrato confirmado correctamente
-        </Alert>
-      </Snackbar>
+      <ConfirmSendModal
+        open={openModal}
+        isMobile={isMobile}
+        sending={isPending}
+        email={email}
+        recipientName={recipientName}
+        onEmailChange={setEmail}
+        onRecipientNameChange={setRecipientName}
+        onClose={handleCloseModal}
+        onSend={handleSendEmail}
+      />
     </Wrapper>
   );
 };

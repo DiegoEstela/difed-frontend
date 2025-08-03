@@ -111,7 +111,19 @@ const Sidebar = () => {
   /* ---------- DESKTOP ---------- */
   return (
     <SidebarContainer>
-      <Logo>DIFED</Logo>
+      <Logo>
+        DIFED{" "}
+        <Typography
+          variant="caption"
+          style={{
+            color: "#d2e7f8",
+            fontWeight: 500,
+            letterSpacing: "0.5px",
+          }}
+        >
+          by Desktop
+        </Typography>
+      </Logo>
 
       <NavItemsWrapper>
         <NavItem
